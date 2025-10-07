@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Zero Dep Kanban</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="module" src="index.js"></script>
+</head>
+
+<body>
+<header>
+    <h1 id="board-name">Loading...</h1>
+</header>
+<main id="app">
+</main>
+<template id="column-template">
+    <section class="column">
+        <h2 class="column-name"></h2>
+        <ul class="card-list"></ul>
+        <form class="add-card-form">
+            <input aria-label="New card text" class="new-card-text">
+            <button class="add-card">Add</button>
+        </form>
+    </section>
+</template>
+
+<template id="card-template">
+    <li class="card-item" draggable="true">
+        <article>
+            <p class="card-body"></p>
+        </article>
+    </li>
+</template>
+
+</body>
+
+</html>

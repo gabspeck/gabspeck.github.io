@@ -1,0 +1,13 @@
+.card-item {
+    cursor: grab;
+    user-select: none;
+}
+
+.card-list {
+    border: 1px black solid;
+    min-height: 18pt;
+}
+
+.card-item .dragging {
+    cursor: grabbing;
+}
