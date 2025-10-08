@@ -2,6 +2,8 @@ let dragging = null;
 
 const boardKey = 'kanban-board'
 
+let saveTimeout = null;
+
 const defaultBoard = {
     _layoutVersion: 1,
     name: 'Zero dep Kanban board',
@@ -27,26 +29,24 @@ const defaultBoard = {
 
 let board = null;
 
-const autosaver = new MutationObserver(() => {
-    const newBoard = {
-        _layoutVersion: 1,
-        name: document.getElementById('board-name').textContent,
-        id: document.getElementById('app').getAttribute('data-id'),
-        columns: document.querySelectorAll('.column').values().map(col => ({
-            id: col.getAttribute('data-id'),
-            name: col.querySelector('.column-name').innerText,
-            cards: col.querySelectorAll('.card-item').values().map(card => ({
-                id: card.getAttribute('data-id'),
-                body: card.innerText
-            })).toArray()
-        })).toArray()
-    }
-    void saveBoard(newBoard)
-})
+// const autosaver = new MutationObserver(() => {
+//     Object.assign(board, {
+//         name: document.getElementById('board-name').textContent,
+//         id: document.getElementById('app').getAttribute('data-id'),
+//         columns: document.querySelectorAll('.column').values().map(col => ({
+//             id: col.getAttribute('data-id'),
+//             name: col.querySelector('.column-name').innerText,
+//             cards: col.querySelectorAll('.card-item').values().map(card => ({
+//                 id: card.getAttribute('data-id'),
+//                 body: card.innerText
+//             })).toArray()
+//         })).toArray()
+//     })
+// })
 
 document.addEventListener('DOMContentLoaded', () => {
     initializeBoard()
-    autosaver.observe(document.getElementById('app'), {subtree: true, childList: true})
+    // autosaver.observe(document.getElementById('app'), {subtree: true, childList: true})
 });
 
 function initializeBoard() {
@@ -58,25 +58,37 @@ function initializeBoard() {
         console.error("could not parse stored board; resetting")
     }
 
-    board = new Proxy(parsedBoard ?? defaultBoard, {
+    const _board = parsedBoard ?? defaultBoard
+
+    board = new Proxy(_board, {
         set(target, p, newValue, receiver) {
-            void saveBoard(receiver)
+            console.log(p, newValue)
+            renderBoard(target)
+            void saveBoard(target)
             return Reflect.set(target, p, newValue, receiver)
         }
     })
+    renderBoard(board)
+}
 
-    const boardElement = document.querySelector('main')
-    boardElement.setAttribute('data-id', board.id)
+function renderBoard(board) {
+    const main = document.querySelector('#app')
+    main.setAttribute('data-id', board.id)
     document.querySelector('#board-name').innerText = board.name
 
-    for (const column of board.columns) {
-        boardElement.appendChild(renderColumn(column))
-    }
+    const children = board.columns.map(column => renderColumn(column))
+    main.replaceChildren(...children)
 
 }
 
 async function saveBoard(board) {
-    await localStorage.setItem(boardKey, JSON.stringify(board))
+    if (saveTimeout) {
+        clearTimeout(saveTimeout)
+    }
+    saveTimeout = setTimeout(async () => {
+        await localStorage.setItem(boardKey, JSON.stringify(board))
+        saveTimeout = null
+    }, 100)
 }
 
 function renderColumn(column) {
@@ -84,6 +96,18 @@ function renderColumn(column) {
     const fragment = template.content.cloneNode(true)
     fragment.querySelector('.column').setAttribute('data-id', column.id)
     fragment.querySelector('.column-name').innerText = column.name
+
+    fragment.querySelector('.add-card-form').addEventListener('submit', (ev) => {
+        ev.preventDefault()
+        const columnId = ev.target.closest('.column').getAttribute('data-id')
+        const data = new FormData(ev.target)
+        board.columns.find(col => col.id === columnId).cards.push({
+            id: crypto.randomUUID(),
+            body: data.get('cardText')
+        })
+        board.columns = board.columns
+        ev.target.reset()
+    })
 
     const cardList = fragment.querySelector('.card-list')
     cardList.addEventListener('dragover', (ev) => {
@@ -97,8 +121,12 @@ function renderColumn(column) {
         ev.preventDefault()
         const list = ev.target.closest('.card-list')
         if (list) {
-            list.appendChild(dragging)
-            serializeBoard()
+            const columnId = list.closest('.column').getAttribute('data-id')
+            const newColumn = board.columns.find(col => col.id === columnId)
+            const cardId = dragging.getAttribute('data-id')
+            // rewrite storage object to be more relational-like and make this easier...
+            console.log(cardId)
+            board.columns = board.columns
         }
     })
     for (const card of column.cards) {
@@ -106,10 +134,6 @@ function renderColumn(column) {
     }
 
     return fragment
-}
-
-function serializeBoard() {
-
 }
 
 function renderCard(card) {
