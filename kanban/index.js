@@ -4,28 +4,31 @@ const boardKey = 'kanban-board'
 
 let saveTimeout = null;
 
-const defaultBoard = {
-    _layoutVersion: 1,
-    name: 'Zero dep Kanban board',
-    id: crypto.randomUUID(),
-    columns: [
-        {
-            id: crypto.randomUUID(),
-            name: 'To do',
-            cards: [{id: crypto.randomUUID(), body: 'Walk the dog'}]
+function makeDefaultBoard() {
+    const toDoId = crypto.randomUUID();
+    const doingId = crypto.randomUUID();
+    const doneId = crypto.randomUUID();
+
+    const toDoCardId = crypto.randomUUID();
+    const doingCardId = crypto.randomUUID();
+    const doneCardId = crypto.randomUUID();
+
+    return {
+        name: 'Zero dep Kanban board',
+        columns: {
+            [toDoId]: {id: toDoId, name: 'To do'},
+            [doingId]: {id: doingId, name: 'Doing'},
+            [doneId]: {id: doneId, name: 'Done'}
         },
-        {
-            id: crypto.randomUUID(),
-            name: 'Doing',
-            cards: [{id: crypto.randomUUID(), body: 'Look for a new apartment'}]
-        },
-        {
-            id: crypto.randomUUID(),
-            name: 'Done',
-            cards: [{id: crypto.randomUUID(), body: 'Pay the rent'}]
+        cards: {
+            [toDoCardId]: {id: toDoCardId, columnId: toDoId, body: 'Walk the dog'},
+            [doingCardId]: {id: doingCardId, columnId: doingId, body: 'Look for a new apartment'},
+            [doneCardId]: {id: doneCardId, columnId: doneId, body: 'Pay the rent'}
         }
-    ]
+    };
 }
+
+const defaultBoard = makeDefaultBoard()
 
 let board = null;
 
@@ -62,7 +65,6 @@ function initializeBoard() {
 
     board = new Proxy(_board, {
         set(target, p, newValue, receiver) {
-            console.log(p, newValue)
             renderBoard(target)
             void saveBoard(target)
             return Reflect.set(target, p, newValue, receiver)
@@ -73,10 +75,9 @@ function initializeBoard() {
 
 function renderBoard(board) {
     const main = document.querySelector('#app')
-    main.setAttribute('data-id', board.id)
     document.querySelector('#board-name').innerText = board.name
 
-    const children = board.columns.map(column => renderColumn(column))
+    const children = Object.values(board.columns).map(column => renderColumn(column, Object.values(board.cards).filter(card => card.columnId === column.id)))
     main.replaceChildren(...children)
 
 }
@@ -91,25 +92,30 @@ async function saveBoard(board) {
     }, 100)
 }
 
-function renderColumn(column) {
+function renderColumn(column, cards) {
     const template = document.getElementById('column-template')
     const fragment = template.content.cloneNode(true)
     fragment.querySelector('.column').setAttribute('data-id', column.id)
     fragment.querySelector('.column-name').innerText = column.name
+    const cardElements = cards.map(c => renderCard(c))
+    fragment.querySelector('.card-list').replaceChildren(...cardElements)
 
     fragment.querySelector('.add-card-form').addEventListener('submit', (ev) => {
         ev.preventDefault()
         const columnId = ev.target.closest('.column').getAttribute('data-id')
         const data = new FormData(ev.target)
-        board.columns.find(col => col.id === columnId).cards.push({
-            id: crypto.randomUUID(),
+        const newCardId = crypto.randomUUID()
+        board.cards[newCardId] = {
+            id: newCardId,
+            columnId,
             body: data.get('cardText')
-        })
-        board.columns = board.columns
+        }
+        board.cards = board.cards
         ev.target.reset()
     })
 
     const cardList = fragment.querySelector('.card-list')
+    cardList.setAttribute('data-id', column.id)
     cardList.addEventListener('dragover', (ev) => {
         if (!dragging) {
             return
@@ -120,19 +126,15 @@ function renderColumn(column) {
     cardList.addEventListener('drop', (ev) => {
         ev.preventDefault()
         const list = ev.target.closest('.card-list')
-        if (list) {
-            const columnId = list.closest('.column').getAttribute('data-id')
-            const newColumn = board.columns.find(col => col.id === columnId)
+        if (dragging && list) {
+            const listId = list.getAttribute('data-id')
             const cardId = dragging.getAttribute('data-id')
-            // rewrite storage object to be more relational-like and make this easier...
-            console.log(cardId)
-            board.columns = board.columns
+            if (board.cards[cardId]) {
+                board.cards[cardId].columnId = listId
+                board.cards = board.cards
+            }
         }
     })
-    for (const card of column.cards) {
-        cardList.appendChild(renderCard(card))
-    }
-
     return fragment
 }
 
