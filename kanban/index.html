@@ -17,7 +17,13 @@
 </main>
 <template id="column-template">
     <section class="column">
-        <h2 class="column-name"></h2>
+        <div class="header-row">
+            <h2 class="column-name"></h2>
+            <form class="actions">
+                <button name="action" value="edit">✏️</button>
+                <button name="action" value="delete">🗑️</button>
+            </form>
+        </div>
         <ul class="card-list"></ul>
         <form class="add-card-form">
             <input required aria-label="New card text" name="cardText" class="new-card-text">
@@ -32,6 +38,12 @@
             <p class="card-body"></p>
         </article>
     </li>
+</template>
+
+<template id="temp-input">
+    <form>
+        <input type="text">
+    </form>
 </template>
 
 </body>

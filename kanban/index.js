@@ -65,6 +65,7 @@ function initializeBoard() {
 
     board = new Proxy(_board, {
         set(target, p, newValue, receiver) {
+            console.log(target, p)
             renderBoard(target)
             void saveBoard(target)
             return Reflect.set(target, p, newValue, receiver)
@@ -112,6 +113,31 @@ function renderColumn(column, cards) {
         }
         board.cards = board.cards
         ev.target.reset()
+    })
+
+    fragment.querySelector('.actions').addEventListener('submit', ev => {
+        ev.preventDefault()
+        switch (ev.submitter.value) {
+            case 'edit':
+                const columnNameElement = ev.submitter.closest('.column').querySelector('.column-name')
+                const tempForm = document.getElementById('temp-input').content.cloneNode(true).querySelector('form')
+                const onSubmit = (ev) => {
+                    ev.preventDefault()
+                    const columnId = ev.target.closest('.column').getAttribute('data-id')
+                    board.columns[columnId].name = tempForm.querySelector('input').value
+                    board.columns = board.columns
+                }
+                tempForm.addEventListener('submit', onSubmit)
+                const tempInput = tempForm.querySelector('input')
+                tempInput.addEventListener('blur', onSubmit)
+                tempInput.value = columnNameElement.innerText
+                columnNameElement.replaceWith(tempForm)
+                tempInput.focus()
+                console.log(tempForm)
+                break;
+            case 'delete':
+                break;
+        }
     })
 
     const cardList = fragment.querySelector('.card-list')

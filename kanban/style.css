@@ -11,3 +11,13 @@
 .card-item .dragging {
     cursor: grabbing;
 }
+
+.column .header-row {
+    display: flex;
+    gap: 0.5em;
+    flex-direction: row;
+}
+
+.column .actions {
+    align-self: center;
+}
