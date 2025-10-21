@@ -32,24 +32,8 @@ const defaultBoard = makeDefaultBoard()
 
 let board = null;
 
-// const autosaver = new MutationObserver(() => {
-//     Object.assign(board, {
-//         name: document.getElementById('board-name').textContent,
-//         id: document.getElementById('app').getAttribute('data-id'),
-//         columns: document.querySelectorAll('.column').values().map(col => ({
-//             id: col.getAttribute('data-id'),
-//             name: col.querySelector('.column-name').innerText,
-//             cards: col.querySelectorAll('.card-item').values().map(card => ({
-//                 id: card.getAttribute('data-id'),
-//                 body: card.innerText
-//             })).toArray()
-//         })).toArray()
-//     })
-// })
-
 document.addEventListener('DOMContentLoaded', () => {
     initializeBoard()
-    // autosaver.observe(document.getElementById('app'), {subtree: true, childList: true})
 });
 
 function initializeBoard() {
@@ -65,7 +49,6 @@ function initializeBoard() {
 
     board = new Proxy(_board, {
         set(target, p, newValue, receiver) {
-            console.log(target, p)
             renderBoard(target)
             void saveBoard(target)
             return Reflect.set(target, p, newValue, receiver)
@@ -75,7 +58,7 @@ function initializeBoard() {
 }
 
 function renderBoard(board) {
-    const main = document.querySelector('#app')
+    const main = document.querySelector('#board')
     document.querySelector('#board-name').innerText = board.name
 
     const children = Object.values(board.columns).map(column => renderColumn(column, Object.values(board.cards).filter(card => card.columnId === column.id)))
@@ -117,13 +100,13 @@ function renderColumn(column, cards) {
 
     fragment.querySelector('.actions').addEventListener('submit', ev => {
         ev.preventDefault()
+        const columnId = ev.target.closest('.column').getAttribute('data-id')
         switch (ev.submitter.value) {
             case 'edit':
                 const columnNameElement = ev.submitter.closest('.column').querySelector('.column-name')
                 const tempForm = document.getElementById('temp-input').content.cloneNode(true).querySelector('form')
                 const onSubmit = (ev) => {
                     ev.preventDefault()
-                    const columnId = ev.target.closest('.column').getAttribute('data-id')
                     board.columns[columnId].name = tempForm.querySelector('input').value
                     board.columns = board.columns
                 }
@@ -133,9 +116,20 @@ function renderColumn(column, cards) {
                 tempInput.value = columnNameElement.innerText
                 columnNameElement.replaceWith(tempForm)
                 tempInput.focus()
-                console.log(tempForm)
                 break;
             case 'delete':
+                const dialog = document.getElementById("confirmation-dialog")
+                const columnName = ev.target.closest('.column').querySelector('.column-name').innerText
+                dialog.querySelector(".confirmation-text").innerText = `Delete column '${columnName}'?`
+                dialog.querySelector('form').addEventListener('submit', ev => {
+                    ev.preventDefault()
+                    if (ev.submitter.value === 'yes') {
+                        delete board.columns[columnId]
+                        board.columns = board.columns
+                    }
+                    dialog.open = false
+                })
+                dialog.open = true
                 break;
         }
     })
