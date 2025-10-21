@@ -61,6 +61,18 @@ function renderBoard(board) {
     const main = document.querySelector('#board')
     document.querySelector('#board-name').innerText = board.name
 
+    document.getElementById('add-column-form').addEventListener('submit', ev => {
+        ev.preventDefault()
+        const data = new FormData(ev.target)
+        const id = crypto.randomUUID()
+        board.columns[id] = {
+            id,
+            name: data.get('columnName')
+        }
+        board.columns = board.columns
+        ev.target.reset()
+    })
+
     const children = Object.values(board.columns).map(column => renderColumn(column, Object.values(board.cards).filter(card => card.columnId === column.id)))
     main.replaceChildren(...children)
 
