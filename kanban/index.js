@@ -55,12 +55,6 @@ function initializeBoard() {
         }
     })
     renderBoard(board)
-}
-
-function renderBoard(board) {
-    const main = document.querySelector('#board')
-    document.querySelector('#board-name').innerText = board.name
-
     document.getElementById('add-column-form').addEventListener('submit', ev => {
         ev.preventDefault()
         const data = new FormData(ev.target)
@@ -72,10 +66,13 @@ function renderBoard(board) {
         board.columns = board.columns
         ev.target.reset()
     })
+}
 
+function renderBoard(board) {
+    document.querySelector('#board-name').innerText = board.name
+    const main = document.querySelector('#board')
     const children = Object.values(board.columns).map(column => renderColumn(column, Object.values(board.cards).filter(card => card.columnId === column.id)))
     main.replaceChildren(...children)
-
 }
 
 async function saveBoard(board) {
