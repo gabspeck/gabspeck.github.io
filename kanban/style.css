@@ -18,6 +18,13 @@
     flex-direction: row;
 }
 
-.column .actions {
+.card-content {
+    display: flex;
+    gap: 0.5em;
+    flex-direction: row;
+}
+
+
+.inline-actions {
     align-self: center;
 }

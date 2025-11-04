@@ -107,7 +107,7 @@ function renderColumn(column, cards) {
         ev.target.reset()
     })
 
-    fragment.querySelector('.actions').addEventListener('submit', ev => {
+    fragment.querySelector('.inline-actions').addEventListener('submit', ev => {
         ev.preventDefault()
         const columnId = ev.target.closest('.column').getAttribute('data-id')
         switch (ev.submitter.value) {
@@ -170,13 +170,47 @@ function renderColumn(column, cards) {
 function renderCard(card) {
     const template = document.getElementById('card-template')
     const fragment = template.content.cloneNode(true)
-    const cardItem = fragment.querySelector('.card-item')
+    const cardItem = fragment.querySelector('.card-body')
     cardItem.setAttribute('data-id', card.id)
     cardItem.innerText = card.body
     cardItem.addEventListener('dragstart', (ev) => {
         dragging = ev.target
         ev.dataTransfer.effectAllowed = 'move'
         ev.target.classList.add('dragging')
+    })
+    fragment.querySelector('.inline-actions').addEventListener('submit', ev => {
+        ev.preventDefault()
+        switch (ev.submitter.value) {
+            case 'edit':
+                const cardBodyElement = ev.submitter.closest('.card-content').querySelector('.card-body')
+                const tempForm = document.getElementById('temp-input').content.cloneNode(true).querySelector('form')
+                const onSubmit = (ev) => {
+                    ev.preventDefault()
+                    board.cards[card.id].body = tempForm.querySelector('input').value
+                    board.cards = board.cards
+                }
+                tempForm.addEventListener('submit', onSubmit)
+                const tempInput = tempForm.querySelector('input')
+                tempInput.addEventListener('blur', onSubmit)
+                tempInput.value = cardBodyElement.innerText
+                cardBodyElement.replaceWith(tempForm)
+                tempInput.focus()
+                break;
+            case 'delete':
+                const dialog = document.getElementById("confirmation-dialog")
+                const columnName = ev.target.closest('.column').querySelector('.column-name').innerText
+                dialog.querySelector(".confirmation-text").innerText = `Delete task '${card.body}'?`
+                dialog.querySelector('form').addEventListener('submit', ev => {
+                    ev.preventDefault()
+                    if (ev.submitter.value === 'yes') {
+                        delete board.cards[card.id]
+                        board.cards = board.cards
+                    }
+                    dialog.open = false
+                })
+                dialog.open = true
+                break;
+        }
     })
     cardItem.addEventListener('dragend', () => {
         dragging = null;

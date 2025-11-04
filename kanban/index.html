@@ -33,7 +33,7 @@
     <section class="column">
         <div class="header-row">
             <h2 class="column-name"></h2>
-            <form class="actions">
+            <form class="inline-actions">
                 <button name="action" value="edit">✏️</button>
                 <button name="action" value="delete">🗑️</button>
             </form>
@@ -48,15 +48,19 @@
 
 <template id="card-template">
     <li class="card-item" draggable="true">
-        <article>
+        <article class="card-content">
             <p class="card-body"></p>
+            <form class="inline-actions">
+                <button name="action" value="edit">✏️</button>
+                <button name="action" value="delete">🗑️</button>
+            </form>
         </article>
     </li>
 </template>
 
 <template id="temp-input">
     <form>
-        <input type="text">
+        <input type="text" required>
     </form>
 </template>
 
